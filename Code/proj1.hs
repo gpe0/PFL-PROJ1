@@ -1,3 +1,4 @@
+import Data.Char
 data Symbol = Symbol Char Exponent deriving (Eq, Show)
 
 data Monomial = Monomial Coefficient Symbols deriving (Eq, Show)
@@ -83,3 +84,52 @@ poliDerivative polinomial symbol = normalize [derivative monomial symbol | monom
 
 polinomialTest :: [Monomial]
 polinomialTest = [Monomial 0 [Symbol 'x' 2], Monomial 2 [Symbol 'y' 1], Monomial 5 [Symbol 'z' 1], Monomial 1 [Symbol 'y' 1], Monomial 7 [Symbol 'y' 2]]
+
+poliInStringTest :: [Char]
+poliInStringTest = "0*x^2 + 2y + 5*z^1 + 7*y^2"
+
+-- Parsing Functions
+removeSpacesAndMult :: [Char] -> [Char]
+removeSpacesAndMult  text = [c | c <- text, c /= ' ', c/= '*']
+
+removeCharsTill :: [Char] -> Char -> [Char]
+removeCharsTill [] _ = []
+removeCharsTill (x:xs) char = if x == char then x:xs else removeCharsTill xs char
+
+onlyGetCharsThat :: [Char] -> (Char -> Bool) -> [Char]
+onlyGetCharsThat [] _ = []
+onlyGetCharsThat (x:xs) f = if f x then x : onlyGetCharsThat xs f else onlyGetCharsThat xs f
+
+normalizeExp :: [Char] -> [Char]
+normalizeExp [] = []
+normalizeExp [x1] = if isAlpha x1 then [x1, '^', '1'] else [x1]
+normalizeExp [x1, x2] = if isAlpha x2 then [x1, x2, '^', '1'] else [x1, x2]
+normalizeExp (x1:x2:xs) = if isAlpha x1 && x2 /= '^' then x1 : '^' : '1' : x2 : normalizeExp xs else x1 : x2 : normalizeExp xs
+
+extractCoef :: [Char] -> [Char]
+extractCoef [] = []
+extractCoef (x:xs)  | x == '+' = extractCoef xs
+                    | x == '-' = '-' : extractCoef xs
+                    | otherwise = takeWhile isNumber (x:xs)
+
+extractSymb :: [Char] -> [Char]
+extractSymb [] = []
+extractSymb (x:xs)  | x == '+' || x == '-' = extractSymb xs
+                    | otherwise = onlyGetCharsThat (takeWhile (\x -> x /= '+' && x /= '-') (dropWhile isNumber (x:xs))) isAlpha
+
+
+extractExp :: [Char] -> [Char]
+extractExp [] = []
+extractExp (x:xs)   | x == '+' || x == '-' = extractExp xs
+                    | otherwise = symbolsOrExp isNumber
+        where   symbolsAndExp = takeWhile (\x -> x /= '+' && x /= '-') (dropWhile isNumber (x:xs))
+                symbolsOrExp = onlyGetCharsThat symbolsAndExp
+
+
+
+--parseAux :: [Char] -> [Monomial] -> [Monomial]
+--parseAux [] acc = acc
+--parseAux 
+
+--parsePolinomial :: [Char] -> [Char]
+--parsePolinomial poliText = 

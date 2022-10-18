@@ -1,4 +1,7 @@
-import Data.Char
+module Polinomial where
+
+
+import Data.Char ( isNumber, isAlpha )
 data Symbol = Symbol Char Exponent deriving (Eq, Show)
 
 data Monomial = Monomial Coefficient Symbols deriving (Eq, Show)

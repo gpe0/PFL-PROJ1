@@ -1,6 +1,5 @@
 module Polinomial where
 
-
 import Data.Char ( isNumber, isAlpha )
 data Symbol = Symbol Char Exponent deriving (Eq, Show)
 
@@ -69,8 +68,8 @@ normalizeAux (firstPol : secondPol : polinomial) acc | canSum firstPol secondPol
 
 derivative :: Monomial -> Char -> Monomial
 derivative monomial symbol | hasSymbol monomial symbol && getExponentFromSymbol monomial symbol > 1 = Monomial (getExponentFromSymbol monomial symbol * getCoefficient monomial)  [if symb == symbol then Symbol symb (exp - 1) else Symbol symb exp | (symb, exp) <- zip (getSymbols monomial) (getExponentsList monomial)]
-                           | hasSymbol monomial symbol && getExponentFromSymbol monomial symbol == 1 = Monomial (getExponentFromSymbol monomial symbol * getCoefficient monomial)  [if symb == symbol then Symbol '|' 0 else Symbol symb exp | (symb, exp) <- zip (getSymbols monomial) (getExponentsList monomial)]
-                           | otherwise = Monomial 0 [Symbol '|' 0]                                    
+                           | hasSymbol monomial symbol && getExponentFromSymbol monomial symbol == 1 = Monomial (getExponentFromSymbol monomial symbol * getCoefficient monomial)  [Symbol symb exp | (symb, exp) <- zip (getSymbols monomial) (getExponentsList monomial), symb /= symbol]
+                           | otherwise = Monomial 0 []                                    
 
 -- normalize Polinomial - a)
 
@@ -89,15 +88,15 @@ polinomialTest :: [Monomial]
 polinomialTest = [Monomial 0 [Symbol 'x' 2], Monomial 2 [Symbol 'y' 1], Monomial 5 [Symbol 'z' 1], Monomial 1 [Symbol 'y' 1], Monomial 7 [Symbol 'y' 2]]
 
 poliInStringTest :: [Char]
-poliInStringTest = "0*x^2 + 2y + 5*z^1 + 7*y^2"
+poliInStringTest = "0*x^2 + 2y + 5*z^1 - 7*y^2 + x -54*x*y^2*z^3"
 
 -- Parsing Functions
 removeSpacesAndMult :: [Char] -> [Char]
 removeSpacesAndMult  text = [c | c <- text, c /= ' ', c/= '*']
 
-removeCharsTill :: [Char] -> Char -> [Char]
-removeCharsTill [] _ = []
-removeCharsTill (x:xs) char = if x == char then x:xs else removeCharsTill xs char
+removeCharsTillOrTill :: [Char] -> Char -> Char -> [Char]
+removeCharsTillOrTill [] _ _ = []
+removeCharsTillOrTill (x:xs) char1 char2 = if x == char1 || x == char2 then x:xs else removeCharsTillOrTill xs char1 char2
 
 onlyGetCharsThat :: [Char] -> (Char -> Bool) -> [Char]
 onlyGetCharsThat [] _ = []
@@ -113,7 +112,7 @@ extractCoef :: [Char] -> [Char]
 extractCoef [] = []
 extractCoef (x:xs)  | x == '+' = extractCoef xs
                     | x == '-' = '-' : extractCoef xs
-                    | otherwise = takeWhile isNumber (x:xs)
+                    | otherwise = if null (takeWhile isNumber (x:xs)) then "1" else takeWhile isNumber (x:xs)
 
 extractSymb :: [Char] -> [Char]
 extractSymb [] = []
@@ -128,11 +127,11 @@ extractExp (x:xs)   | x == '+' || x == '-' = extractExp xs
         where   symbolsAndExp = takeWhile (\x -> x /= '+' && x /= '-') (dropWhile isNumber (x:xs))
                 symbolsOrExp = onlyGetCharsThat symbolsAndExp
 
+parseAux :: [Char] -> [Monomial] -> [Monomial]
+parseAux [] acc = acc
+parseAux poliText acc = parseAux (removeCharsTillOrTill chars '+' '-') (acc ++ [newMonomial])
+    where   newMonomial = Monomial (read (extractCoef poliText) :: Int) [Symbol symb (read [exp] :: Int) | (symb, exp) <- zip (extractSymb poliText) (extractExp poliText)]
+            (firstChar:chars) = poliText
 
-
---parseAux :: [Char] -> [Monomial] -> [Monomial]
---parseAux [] acc = acc
---parseAux 
-
---parsePolinomial :: [Char] -> [Char]
---parsePolinomial poliText = 
+parsePolinomial :: [Char] -> [Monomial]
+parsePolinomial poliText = parseAux (normalizeExp $ removeSpacesAndMult poliText) []

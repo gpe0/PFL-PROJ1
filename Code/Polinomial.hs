@@ -24,7 +24,7 @@ getSymbols :: Monomial -> [Char]
 getSymbols (Monomial coef symbs) = [getSymbol symb | symb <- symbs]
 
 getExponents :: Monomial -> Int
-getExponents (Monomial coef symbs) = sum [getExponent symb | symb <- symbs]
+getExponents (Monomial coef symbs) = sum [getExponent symb | symb <- symbs] -- sort
 
 getExponentsList :: Monomial -> [Int]
 getExponentsList (Monomial coef symbs) = [getExponent symb | symb <- symbs]
@@ -41,8 +41,8 @@ hasSymbol monomial symbol = [x | x <- getSymbols monomial, x == symbol] /= []
 sortPol :: [Monomial] -> [Monomial]
 sortPol [] = []
 sortPol ((Monomial coef1 symb1) : polinomial) = sortPol first ++ [Monomial coef1 symb1] ++ sortPol last
-    where first = [monomial | monomial <- polinomial, getSymbols monomial < getSymbols mono || (getSymbols monomial == getSymbols mono && getExponents monomial >= getExponents mono)]
-          last = [monomial | monomial <- polinomial, getSymbols monomial > getSymbols mono || (getSymbols monomial == getSymbols mono && getExponents monomial < getExponents mono)]
+    where first = [monomial | monomial <- polinomial, getExponents monomial > getExponents mono || (getExponents monomial == getExponents mono && getSymbols monomial < getSymbols mono)]
+          last = [monomial | monomial <- polinomial, getExponents monomial < getExponents mono || (getExponents monomial == getExponents mono && getSymbols monomial >= getSymbols mono)]
           mono = Monomial coef1 symb1
 
 
@@ -73,13 +73,13 @@ derivative monomial symbol | hasSymbol monomial symbol && getExponentFromSymbol 
 
 -- normalize Polinomial - a)
 
-normalize :: [Monomial] -> [Monomial]
-normalize polinomial = normalizeAux polinomialClean []
+normalize :: [Monomial] -> [Char]
+normalize polinomial = polinomialToString $ normalizeAux polinomialClean []
     where polinomialClean = sortPol $ removeZeros polinomial
 
 
 -- Derivative - d)
-poliDerivative :: [Monomial] -> Char -> [Monomial]
+poliDerivative :: [Monomial] -> Char -> [Char]
 poliDerivative polinomial symbol = normalize [derivative monomial symbol | monomial <- polinomial]
 
 -- Polinomial to test
@@ -91,6 +91,7 @@ poliInStringTest :: [Char]
 poliInStringTest = "0*x^2 + 2y + 5*z^1 - 7*y^2 + x -54*x*y^2*z^3"
 
 -- Parsing Functions
+
 removeSpacesAndMult :: [Char] -> [Char]
 removeSpacesAndMult  text = [c | c <- text, c /= ' ', c/= '*']
 
@@ -119,7 +120,6 @@ extractSymb [] = []
 extractSymb (x:xs)  | x == '+' || x == '-' = extractSymb xs
                     | otherwise = onlyGetCharsThat (takeWhile (\x -> x /= '+' && x /= '-') (dropWhile isNumber (x:xs))) isAlpha
 
-
 extractExp :: [Char] -> [Char]
 extractExp [] = []
 extractExp (x:xs)   | x == '+' || x == '-' = extractExp xs
@@ -135,3 +135,18 @@ parseAux poliText acc = parseAux (removeCharsTillOrTill chars '+' '-') (acc ++ [
 
 parsePolinomial :: [Char] -> [Monomial]
 parsePolinomial poliText = parseAux (normalizeExp $ removeSpacesAndMult poliText) []
+
+
+removeOutterBrackets :: [[a]] -> [a]
+removeOutterBrackets [] = []
+removeOutterBrackets [[]] = []
+removeOutterBrackets (x:xs) = [item | item <- x] ++ removeOutterBrackets xs
+
+monomialToString :: Monomial -> [Char]
+monomialToString (Monomial coef symbols)    | coef < 0 = show coef ++ removeOutterBrackets [[symb] ++ "^" ++ show exp | Symbol symb exp <- symbols]
+                                            | otherwise = "+" ++ show coef ++ removeOutterBrackets [[symb] ++ "^" ++ show exp | Symbol symb exp <- symbols]
+
+polinomialToString :: [Monomial] -> [Char]
+polinomialToString [] = "0"
+polinomialToString polinomial = if signChar == '+' then stringPoli else signChar:stringPoli
+        where (signChar:stringPoli) = removeOutterBrackets [monomialToString monomial | monomial <- polinomial]

@@ -65,6 +65,14 @@ normalizeAux [onePol] acc = acc ++ [onePol]
 normalizeAux (firstPol : secondPol : polinomial) acc | canSum firstPol secondPol = normalizeAux polinomial (acc ++ [sum2Monomials firstPol secondPol])
                                                      | otherwise = normalizeAux (secondPol : polinomial) (acc ++ [firstPol])  
 
+normalizeMonomial :: Monomial -> Monomial
+normalizeMonomial monomial = Monomial (getCoefficient monomial) [Symbol symb exp | (symb, exp) <- zip (getSymbols monomial) (getExponentsList monomial)]
+
+multiplyMonomial :: Monomial -> Monomial -> Monomial
+multiplyMonomial monomial1 monomial2 = Monomial ((getCoefficient(monomial1)) * (getCoefficient(monomial2))) (([Symbol symb exp | (symb, exp) <- zip (getSymbols monomial1) (getExponentsList monomial1)])++([Symbol symb exp | (symb, exp) <- zip (getSymbols monomial2) (getExponentsList monomial2)]))
+
+multiplyMonomialAndPolinomial :: Monomial -> [Monomial] -> [Monomial]
+multiplyMonomialAndPolinomial monomial polinomial = map (multiplyMonomial monomial) polinomial
 
 derivative :: Monomial -> Char -> Monomial
 derivative monomial symbol | hasSymbol monomial symbol && getExponentFromSymbol monomial symbol > 1 = Monomial (getExponentFromSymbol monomial symbol * getCoefficient monomial)  [if symb == symbol then Symbol symb (exp - 1) else Symbol symb exp | (symb, exp) <- zip (getSymbols monomial) (getExponentsList monomial)]
@@ -77,6 +85,13 @@ normalize :: [Monomial] -> [Char]
 normalize polinomial = polinomialToString $ normalizeAux polinomialClean []
     where polinomialClean = sortPol $ removeZeros polinomial
 
+-- Adition -b)
+sumPolinomial :: [Monomial] -> [Monomial] -> [Char]
+sumPolinomial polinomial1 polinomial2 = normalize (polinomial1++polinomial2)
+
+-- Product -c)
+multiplyPolinomial :: [Monomial] -> [Monomial] -> [Char]
+multiplyPolinomial polinomial1 polinomial2 = normalize (concat [ multiplyMonomialAndPolinomial monomial2 polinomial1 | monomial2 <- polinomial2])
 
 -- Derivative - d)
 poliDerivative :: [Monomial] -> Char -> [Char]
@@ -84,7 +99,9 @@ poliDerivative polinomial symbol = normalize [derivative monomial symbol | monom
 
 -- Polinomial to test
 
-polinomialTest :: [Monomial]
+polinomialTestSmall :: [Monomial]
+polinomialTestSmall = [Monomial 2 [Symbol 'y' 1]]
+
 polinomialTest = [Monomial 0 [Symbol 'x' 2], Monomial 2 [Symbol 'y' 1], Monomial 5 [Symbol 'z' 1], Monomial 1 [Symbol 'y' 1], Monomial 7 [Symbol 'y' 2]]
 
 poliInStringTest :: [Char]

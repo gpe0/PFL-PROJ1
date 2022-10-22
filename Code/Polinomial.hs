@@ -41,9 +41,18 @@ hasSymbol monomial symbol = [x | x <- getSymbols monomial, x == symbol] /= []
 sortPol :: [Monomial] -> [Monomial]
 sortPol [] = []
 sortPol ((Monomial coef1 symb1) : polinomial) = sortPol first ++ [Monomial coef1 symb1] ++ sortPol last
-    where first = [monomial | monomial <- polinomial, getExponents monomial > getExponents mono || (getExponents monomial == getExponents mono && getSymbols monomial < getSymbols mono)]
-          last = [monomial | monomial <- polinomial, getExponents monomial < getExponents mono || (getExponents monomial == getExponents mono && getSymbols monomial >= getSymbols mono)]
+    where first = [monomial | monomial <- polinomial, getExponents monomial > getExponents mono || (getExponents monomial == getExponents mono && getSymbols monomial < getSymbols mono)
+                    ]
+          last = [monomial | monomial <- polinomial, getExponents monomial < getExponents mono || (getExponents monomial == getExponents mono && getSymbols monomial >= getSymbols mono)
+                    ]
           mono = Monomial coef1 symb1
+
+sortSymbols :: Symbols -> Symbols
+sortSymbols [] = []
+sortSymbols ((Symbol symb1 exp1) : symbols) = sortSymbols first ++ [Symbol symb1 exp1] ++ sortSymbols last
+    where first = [s | s <- symbols, getSymbol s < getSymbol symbol || ( getSymbol s == getSymbol symbol && getExponent s > getExponent symbol)]
+          last = [s | s <- symbols, getSymbol s > getSymbol symbol || ( getSymbol s == getSymbol symbol && getExponent s <= getExponent symbol)]
+          symbol = Symbol symb1 exp1     
 
 
 removeZeros :: [Monomial] -> [Monomial]
@@ -53,26 +62,50 @@ canSum :: Monomial -> Monomial -> Bool
 canSum monomial1 monomial2 = getSymbols monomial1 == getSymbols monomial2 && [getExponentsList monomial1] == [getExponentsList monomial2]
 
 
+substituteLastVal :: [a] -> a -> [a]
+substituteLastVal l x = reverse (x : rest)
+    where (last:rest) = reverse l
+
+
 sum2Monomials :: Monomial -> Monomial -> Monomial
 sum2Monomials monomial1 monomial2 | canSum monomial1 monomial2
                                         = Monomial (getCoefficient monomial1 + getCoefficient monomial2) [Symbol symb exp | (symb, exp) <- zip (getSymbols monomial1) (getExponentsList monomial1)]
                                   | otherwise = error "Can't sum these two monomials"
 
-normalizeAux :: [Monomial] -> [Monomial] -> [Monomial]
-normalizeAux [] acc = acc
-normalizeAux [onePol] [] = [onePol]
-normalizeAux [onePol] acc = acc ++ [onePol] 
-normalizeAux (firstPol : secondPol : polinomial) acc | canSum firstPol secondPol = normalizeAux polinomial (acc ++ [sum2Monomials firstPol secondPol])
-                                                     | otherwise = normalizeAux (secondPol : polinomial) (acc ++ [firstPol])  
+
+normalizeSymbAux :: Symbols -> Symbols -> Symbols
+normalizeSymbAux [] acc = acc
+normalizeSymbAux [oneSymb] [] = [oneSymb]
+normalizeSymbAux (firstSymb : symbols) [] = normalizeSymbAux symbols [firstSymb]
+normalizeSymbAux (firstSymb : symbols) acc | getSymbol lastAccumulated == getSymbol firstSymb = 
+                                                    normalizeSymbAux symbols (
+                                                        substituteLastVal acc (
+                                                            Symbol (getSymbol lastAccumulated) (getExponent lastAccumulated + getExponent firstSymb)
+                                                        )
+                                                    )   
+                                           | otherwise = normalizeSymbAux symbols (acc ++ [firstSymb]) 
+        where lastAccumulated = last acc
+
+normalizeSymbols :: Symbols -> Symbols
+normalizeSymbols symbols = normalizeSymbAux symbolsOrdered []
+    where symbolsOrdered = sortSymbols symbols
+
+normalizePoliAux :: [Monomial] -> [Monomial] -> [Monomial]
+normalizePoliAux [] acc = acc
+normalizePoliAux [onePol] [] = [onePol]
+normalizePoliAux (firstPol : polinomial) [] = normalizePoliAux polinomial [firstPol]
+normalizePoliAux (firstPol : polinomial) acc | canSum firstPol lastAccumulated = normalizePoliAux polinomial (substituteLastVal acc (sum2Monomials firstPol lastAccumulated))
+                                         | otherwise = normalizePoliAux polinomial (acc ++ [firstPol])  
+        where lastAccumulated = last acc
 
 normalizeMonomial :: Monomial -> Monomial
 normalizeMonomial monomial = Monomial (getCoefficient monomial) [Symbol symb exp | (symb, exp) <- zip (getSymbols monomial) (getExponentsList monomial)]
 
 multiplyMonomial :: Monomial -> Monomial -> Monomial
-multiplyMonomial monomial1 monomial2 = Monomial ((getCoefficient(monomial1)) * (getCoefficient(monomial2))) (([Symbol symb exp | (symb, exp) <- zip (getSymbols monomial1) (getExponentsList monomial1)])++([Symbol symb exp | (symb, exp) <- zip (getSymbols monomial2) (getExponentsList monomial2)]))
+multiplyMonomial monomial1 monomial2 = Monomial (getCoefficient monomial1 * getCoefficient monomial2) (([Symbol symb exp | (symb, exp) <- zip (getSymbols monomial1) (getExponentsList monomial1)])++([Symbol symb exp | (symb, exp) <- zip (getSymbols monomial2) (getExponentsList monomial2)]))
 
 multiplyMonomialAndPolinomial :: Monomial -> [Monomial] -> [Monomial]
-multiplyMonomialAndPolinomial monomial polinomial = map (multiplyMonomial monomial) polinomial
+multiplyMonomialAndPolinomial monomial = map (multiplyMonomial monomial)
 
 derivative :: Monomial -> Char -> Monomial
 derivative monomial symbol | hasSymbol monomial symbol && getExponentFromSymbol monomial symbol > 1 = Monomial (getExponentFromSymbol monomial symbol * getCoefficient monomial)  [if symb == symbol then Symbol symb (exp - 1) else Symbol symb exp | (symb, exp) <- zip (getSymbols monomial) (getExponentsList monomial)]
@@ -82,14 +115,17 @@ derivative monomial symbol | hasSymbol monomial symbol && getExponentFromSymbol 
 -- normalize Polinomial - a)
 
 normalize :: [Monomial] -> [Char]
-normalize polinomial = polinomialToString $ normalizeAux polinomialClean []
-    where polinomialClean = sortPol $ removeZeros polinomial
+normalize polinomial = polinomialToString $ removeZeros $ normalizePoliAux polinomialSorted []
+    where polinomialSorted = sortPol polinomialSymbolsSorted
+          polinomialSymbolsSorted = [Monomial coef (normalizeSymbols symbols) | Monomial coef symbols <- polinomial]
 
 -- Adition -b)
+
 sumPolinomial :: [Monomial] -> [Monomial] -> [Char]
-sumPolinomial polinomial1 polinomial2 = normalize (polinomial1++polinomial2)
+sumPolinomial polinomial1 polinomial2 = normalize (polinomial1 ++ polinomial2)
 
 -- Product -c)
+
 multiplyPolinomial :: [Monomial] -> [Monomial] -> [Char]
 multiplyPolinomial polinomial1 polinomial2 = normalize (concat [ multiplyMonomialAndPolinomial monomial2 polinomial1 | monomial2 <- polinomial2])
 
@@ -102,6 +138,7 @@ poliDerivative polinomial symbol = normalize [derivative monomial symbol | monom
 polinomialTestSmall :: [Monomial]
 polinomialTestSmall = [Monomial 2 [Symbol 'y' 1]]
 
+polinomialTest :: [Monomial]
 polinomialTest = [Monomial 0 [Symbol 'x' 2], Monomial 2 [Symbol 'y' 1], Monomial 5 [Symbol 'z' 1], Monomial 1 [Symbol 'y' 1], Monomial 7 [Symbol 'y' 2]]
 
 poliInStringTest :: [Char]
@@ -137,17 +174,23 @@ extractSymb [] = []
 extractSymb (x:xs)  | x == '+' || x == '-' = extractSymb xs
                     | otherwise = onlyGetCharsThat (takeWhile (\x -> x /= '+' && x /= '-') (dropWhile isNumber (x:xs))) isAlpha
 
-extractExp :: [Char] -> [Char]
+createExpList :: [Char] -> [Int] -> [Int]
+createExpList [] acc = acc
+createExpList expression acc = createExpList nextIter (acc ++ [read exponent :: Int])
+    where   nextExpression = dropWhile ( /= '^' ) expression
+            exponent = takeWhile isNumber (drop 1 nextExpression)
+            nextIter = dropWhile ( /= '^' ) (drop 1 nextExpression)
+
+extractExp :: [Char] -> [Int]
 extractExp [] = []
 extractExp (x:xs)   | x == '+' || x == '-' = extractExp xs
-                    | otherwise = symbolsOrExp isNumber
+                    | otherwise = createExpList symbolsAndExp []
         where   symbolsAndExp = takeWhile (\x -> x /= '+' && x /= '-') (dropWhile isNumber (x:xs))
-                symbolsOrExp = onlyGetCharsThat symbolsAndExp
 
 parseAux :: [Char] -> [Monomial] -> [Monomial]
 parseAux [] acc = acc
 parseAux poliText acc = parseAux (removeCharsTillOrTill chars '+' '-') (acc ++ [newMonomial])
-    where   newMonomial = Monomial (read (extractCoef poliText) :: Int) [Symbol symb (read [exp] :: Int) | (symb, exp) <- zip (extractSymb poliText) (extractExp poliText)]
+    where   newMonomial = Monomial (read (extractCoef poliText) :: Int) [Symbol symb exp | (symb, exp) <- zip (extractSymb poliText) (extractExp poliText)]
             (firstChar:chars) = poliText
 
 parsePolinomial :: [Char] -> [Monomial]

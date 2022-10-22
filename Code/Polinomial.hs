@@ -246,19 +246,13 @@ parseAux poliText acc = parseAux (removeCharsTillOrTill chars '+' '-') (acc ++ [
 parsePolinomial :: [Char] -> [Monomial]
 parsePolinomial poliText = parseAux (normalizeExp $ removeSpacesAndMult poliText) []
 
--- Remove outter brackets from a given array
-removeOutterBrackets :: [[a]] -> [a]
-removeOutterBrackets [] = []
-removeOutterBrackets [[]] = []
-removeOutterBrackets (x:xs) = [item | item <- x] ++ removeOutterBrackets xs
-
 -- Transforms a monomial into a string
 monomialToString :: Monomial -> [Char]
-monomialToString (Monomial coef symbols)    | coef < 0 = show coef ++ removeOutterBrackets [[symb] ++ "^" ++ show exp | Symbol symb exp <- symbols]
-                                            | otherwise = "+" ++ show coef ++ removeOutterBrackets [[symb] ++ "^" ++ show exp | Symbol symb exp <- symbols]
+monomialToString (Monomial coef symbols)    | coef < 0 = show coef ++ concat [[symb] ++ "^" ++ show exp | Symbol symb exp <- symbols]
+                                            | otherwise = "+" ++ show coef ++ concat [[symb] ++ "^" ++ show exp | Symbol symb exp <- symbols]
 
 -- Transforms a polinomial into a string
 polinomialToString :: [Monomial] -> [Char]
 polinomialToString [] = "0"
 polinomialToString polinomial = if signChar == '+' then stringPoli else signChar:stringPoli
-        where (signChar:stringPoli) = removeOutterBrackets [monomialToString monomial | monomial <- polinomial]
+        where (signChar:stringPoli) = concat [monomialToString monomial | monomial <- polinomial]

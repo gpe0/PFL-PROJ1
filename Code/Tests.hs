@@ -40,11 +40,11 @@ prop_sumCommutative p1 p2 = sumPolinomial p1 p2 == sumPolinomial p2 p1
 prop_sumAssociative :: [Monomial] -> [Monomial] -> [Monomial] -> Bool
 prop_sumAssociative p1 p2 p3 = sumPolinomial (parsePolinomial (sumPolinomial p1 p2)) p3 == sumPolinomial p1 (parsePolinomial (sumPolinomial p2 p3))
 
-prop_AdditiveIdentity :: [Monomial] -> Bool
-prop_AdditiveIdentity p1 = sumPolinomial p1 [Monomial 0 []] == normalize p1
+prop_additiveIdentity :: [Monomial] -> Bool
+prop_additiveIdentity p1 = sumPolinomial p1 [Monomial 0 []] == normalize p1
 
-prop_AdditiveInverse :: [Monomial] -> Bool
-prop_AdditiveInverse p1 = sumPolinomial p1 (parsePolinomial (multiplyPolinomial p1 [Monomial (-1) []])) == "0"
+prop_additiveInverse :: [Monomial] -> Bool
+prop_additiveInverse p1 = sumPolinomial p1 (parsePolinomial (multiplyPolinomial p1 [Monomial (-1) []])) == "0"
 
 -- Testing multiplication c)
 
@@ -58,6 +58,18 @@ prop_multiplicationDistributive p1 p2 p3 = isListIn ex1 ex2 && isListIn ex2 ex1
         where   ex1 = parsePolinomial (multiplyPolinomial p1 (parsePolinomial (sumPolinomial p2 p3)))
                 ex2 = parsePolinomial (sumPolinomial (parsePolinomial (multiplyPolinomial p1 p2)) (parsePolinomial (multiplyPolinomial p1 p3)))
 
+prop_multiplicationIdentity :: [Monomial] -> Bool
+prop_multiplicationIdentity p1 = multiplyPolinomial p1 [Monomial 1 []] == normalize p1
+
+prop_multiplicationAbsorving :: [Monomial] -> Bool
+prop_multiplicationAbsorving p1 = multiplyPolinomial p1 [Monomial 0 []] == "0"
+
+-- Testing derivative d)
+
+prop_derivativeSum :: [Monomial] -> [Monomial] -> Char -> Bool
+prop_derivativeSum p1 p2 x = ex1 == ex2
+        where   ex1 = poliDerivative (parsePolinomial (sumPolinomial p1 p2)) x
+                ex2 = sumPolinomial (parsePolinomial (poliDerivative p1 x)) (parsePolinomial (poliDerivative p2 x))
 
 return []
 

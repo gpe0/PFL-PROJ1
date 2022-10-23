@@ -64,8 +64,8 @@ sortPol ((Monomial coef1 symb1) : polynomial) = sortPol first ++ [Monomial coef1
 sortSymbols :: Symbols -> Symbols
 sortSymbols [] = []
 sortSymbols ((Symbol symb1 exp1) : symbols) = sortSymbols first ++ [Symbol symb1 exp1] ++ sortSymbols last
-    where first = [s | s <- symbols, getSymbol s < getSymbol symbol || ( getSymbol s == getSymbol symbol && getExponent s > getExponent symbol)]
-          last = [s | s <- symbols, getSymbol s > getSymbol symbol || ( getSymbol s == getSymbol symbol && getExponent s <= getExponent symbol)]
+    where first = [s | s <- symbols, getSymbol s < getSymbol symbol]
+          last = [s | s <- symbols, getSymbol s >= getSymbol symbol]
           symbol = Symbol symb1 exp1     
 
 

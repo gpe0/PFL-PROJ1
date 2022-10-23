@@ -1,10 +1,10 @@
-import Polinomial
+import Polynomial
 import Control.Monad (when)
 
 main :: IO()
 main = 
     do
-        putStr "PFL Project 1 - Polinomials\n"          
+        putStr "PFL Project 1 - Polynomials\n"          
         loop
 
         putStr "\nFinishing Program\n"
@@ -16,10 +16,10 @@ loop :: IO()
 loop = 
     do
         putStr "\nWhat do you want to do:\n"
-        putStr "1 - Normalize polinomial\n"
-        putStr "2 - Sum two polinomials\n"
-        putStr "3 - Multiply two polinomials\n"
-        putStr "4 - derive a polinomial\n"
+        putStr "1 - Normalize polynomial\n"
+        putStr "2 - Sum two polynomials\n"
+        putStr "3 - Multiply two polynomials\n"
+        putStr "4 - derive a polynomial\n"
         putStr "Anything else - Quit\n"
         putStr "Choice: "
         choice <- getLine
@@ -30,38 +30,38 @@ loop =
 
 loop1 :: IO()
 loop1 = do
-    putStr "Write a polinomial: "
-    polinomial <- getLine
+    putStr "Write a polynomial: "
+    polynomial <- getLine
     putStrLn "Result: "
-    putStrLn (polinomialToString (normalize (parsePolinomial polinomial)))
+    putStrLn (polynomialToString (normalize (parsePolynomial polynomial)))
     loop
 
 loop2 :: IO()
 loop2 = do
-    putStr "Write a polinomial: "
-    polinomial1 <- getLine
-    putStr "Write another polinomial: "
-    polinomial2 <- getLine
+    putStr "Write a polynomial: "
+    polynomial1 <- getLine
+    putStr "Write another polynomial: "
+    polynomial2 <- getLine
     putStrLn "Result: "
-    putStrLn (polinomialToString (sumPolinomial (parsePolinomial polinomial1) (parsePolinomial polinomial2)))
+    putStrLn (polynomialToString (sumPolynomial (parsePolynomial polynomial1) (parsePolynomial polynomial2)))
     loop
 
 loop3 :: IO()
 loop3 = do
-    putStr "Write a polinomial: "
-    polinomial1 <- getLine
-    putStr "Write another polinomial: "
-    polinomial2 <- getLine
+    putStr "Write a polynomial: "
+    polynomial1 <- getLine
+    putStr "Write another polynomial: "
+    polynomial2 <- getLine
     putStrLn "Result: "
-    putStrLn (polinomialToString (multiplyPolinomial (parsePolinomial polinomial1) (parsePolinomial polinomial2)))
+    putStrLn (polynomialToString (multiplyPolynomial (parsePolynomial polynomial1) (parsePolynomial polynomial2)))
     loop
 
 loop4 :: IO()
 loop4 = do
-    putStr "Write a polinomial: "
-    polinomial <- getLine
+    putStr "Write a polynomial: "
+    polynomial <- getLine
     putStr "Write the symbol to be derived to (one char): "
     symbol <- getLine
     putStrLn "Result: "
-    putStrLn (polinomialToString (poliDerivative (parsePolinomial polinomial) (head symbol)))
+    putStrLn (polynomialToString (poliDerivative (parsePolynomial polynomial) (head symbol)))
     loop

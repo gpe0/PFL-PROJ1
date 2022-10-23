@@ -152,23 +152,23 @@ derivative monomial symbol | hasSymbol monomial symbol && getExponentFromSymbol 
 
 -- normalize Polinomial - a)
 
-normalize :: [Monomial] -> [Char]
-normalize polinomial = polinomialToString $ removeZeros $ normalizePoliAux polinomialSorted []
+normalize :: [Monomial] -> [Monomial]
+normalize polinomial = removeZeros $ normalizePoliAux polinomialSorted []
     where polinomialSorted = sortPol polinomialSymbolsSorted
           polinomialSymbolsSorted = [Monomial coef (normalizeSymbols symbols) | Monomial coef symbols <- polinomial]
 
 -- Adition -b)
 
-sumPolinomial :: [Monomial] -> [Monomial] -> [Char]
+sumPolinomial :: [Monomial] -> [Monomial] -> [Monomial]
 sumPolinomial polinomial1 polinomial2 = normalize (polinomial1 ++ polinomial2)
 
 -- Product -c)
 
-multiplyPolinomial :: [Monomial] -> [Monomial] -> [Char]
+multiplyPolinomial :: [Monomial] -> [Monomial] -> [Monomial]
 multiplyPolinomial polinomial1 polinomial2 = normalize (concat [ multiplyMonomialAndPolinomial monomial2 polinomial1 | monomial2 <- polinomial2])
 
 -- Derivative - d)
-poliDerivative :: [Monomial] -> Char -> [Char]
+poliDerivative :: [Monomial] -> Char -> [Monomial]
 poliDerivative polinomial symbol = normalize [derivative monomial symbol | monomial <- polinomial]
 
 
@@ -204,8 +204,7 @@ onlyGetCharsThat (x:xs) f = if f x then x : onlyGetCharsThat xs f else onlyGetCh
 normalizeExp :: [Char] -> [Char]
 normalizeExp [] = []
 normalizeExp [x1] = if isAlpha x1 then [x1, '^', '1'] else [x1]
-normalizeExp [x1, x2] = if isAlpha x2 then [x1, x2, '^', '1'] else [x1, x2]
-normalizeExp (x1:x2:xs) = if isAlpha x1 && x2 /= '^' then x1 : '^' : '1' : x2 : normalizeExp xs else x1 : x2 : normalizeExp xs
+normalizeExp (x1:x2:xs) = if isAlpha x1 && x2 /= '^' then x1 : '^' : '1' : normalizeExp (x2:xs) else x1 : normalizeExp (x2:xs)
 
 -- extract the next monomial coefficient from a given string
 extractCoef :: [Char] -> [Char]

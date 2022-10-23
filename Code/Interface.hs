@@ -33,7 +33,7 @@ loop1 = do
     putStr "Write a polinomial: "
     polinomial <- getLine
     putStrLn "Result: "
-    putStrLn (normalize (parsePolinomial polinomial))
+    putStrLn (polinomialToString (normalize (parsePolinomial polinomial)))
     loop
 
 loop2 :: IO()
@@ -43,7 +43,7 @@ loop2 = do
     putStr "Write another polinomial: "
     polinomial2 <- getLine
     putStrLn "Result: "
-    putStrLn (sumPolinomial (parsePolinomial polinomial1) (parsePolinomial polinomial2))
+    putStrLn (polinomialToString (sumPolinomial (parsePolinomial polinomial1) (parsePolinomial polinomial2)))
     loop
 
 loop3 :: IO()
@@ -53,7 +53,7 @@ loop3 = do
     putStr "Write another polinomial: "
     polinomial2 <- getLine
     putStrLn "Result: "
-    putStrLn (multiplyPolinomial (parsePolinomial polinomial1) (parsePolinomial polinomial2))
+    putStrLn (polinomialToString (multiplyPolinomial (parsePolinomial polinomial1) (parsePolinomial polinomial2)))
     loop
 
 loop4 :: IO()
@@ -63,5 +63,5 @@ loop4 = do
     putStr "Write the symbol to be derived to (one char): "
     symbol <- getLine
     putStrLn "Result: "
-    putStrLn (poliDerivative (parsePolinomial polinomial) (head symbol))
+    putStrLn (polinomialToString (poliDerivative (parsePolinomial polinomial) (head symbol)))
     loop
